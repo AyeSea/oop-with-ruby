@@ -35,19 +35,18 @@ class MainBoard
     create_grid
   end
 
-
-  def fill_row
-    until row_complete?
-      update_slot
-      @col += 1
-      show_mainboard
-    end
-  end
-
   def update_slot
-    puts "Row #{row}, Column #{col} - please enter a number:"
-    number = gets.chomp
-    grid[12 - row][col - 1] = number
+    loop do
+      puts "Row #{row}, Column #{col} - please enter a number:"
+      number = gets.chomp.to_i
+
+      if (1..6).include?(number)
+        grid[12 - row][col - 1] = number
+        break
+      else
+        puts "#{number} is not a valid number. Please enter a number from 1 to 6."
+      end
+    end
   end
 
   def row_complete?
@@ -58,37 +57,19 @@ class MainBoard
     @row > 12 ? true : false
   end
 
-  def victory
-    puts "You guessed the opponent's row! You win!"
-  end
-
-
   private
   def create_grid
-    @grid = Array.new(12) { Array.new(4) {" "} }
+    @grid = Array.new(12) { Array.new(4) { " " } }
   end
-
-  def show_mainboard
-    @grid.each do |row_array|      
-      
-      row_array.each do |slot|
-        print "| #{slot} |"
-      end
-
-      puts
-      puts '--------------------'
-      puts
-    end
-  end
-
 end
 
 
 class FeedbackBoard
-  attr_accessor :grid
+  attr_accessor :grid, :row
 
   def initialize
-    @grid = Array.new(4) {"NONE"}
+    @grid = Array.new(12) { Array.new(4) { "NONE" } }
+    @row = Array.new(4) { "NONE" }
   end
 end
 
@@ -105,14 +86,20 @@ class Game
 
   def begin
     until mainboard.board_full?
-      mainboard.fill_row
+      
+      until mainboard.row_complete?
+        mainboard.update_slot
+        mainboard.col += 1
+        show_board
+      end
 
-      compare_to_answer
+      update_feedback
 
       if victory?
         puts "You got the correct answer of #{opponent.answer}! YOU WIN!"
         exit
       else
+        sideboard.row = sideboard.row.collect { |slot| slot == "NONE" }    
         mainboard.row += 1
         mainboard.col = 1
       end
@@ -123,30 +110,48 @@ class Game
   end
 
   private
-  def compare_to_answer 
+  def update_feedback
     i = 0
 
     mainboard.grid[12 - mainboard.row].each do |slot|
-      slot = slot.to_i
       if slot == opponent.answer[i]
-        sideboard.grid[i] = "MATCH"
+        sideboard.row[i] = "MATCH"
       elsif opponent.answer.include?(slot)
-        sideboard.grid[i] = "EXIST"
+        sideboard.row[i] = "EXIST"
+      else
+        sideboard.row[i] = "NONE"
       end
 
       i += 1
     end
 
-    p "Feedback on Guess: #{sideboard.grid}"
+    sideboard.grid[12 - mainboard.row] = sideboard.row
+    show_board
     puts
   end
 
   def victory?
-    if sideboard.grid.all? { |slot| slot == "MATCH" }
+    if sideboard.row.all? { |slot| slot == "MATCH" }
       true
     else
-      sideboard.grid = sideboard.grid.collect { |slot| slot = "NONE" }
+  
       false
+    end
+  end
+
+  def show_board
+    i = 0
+    mainboard.grid.each do |row_array|      
+      row_array.each do |slot|
+        print "| #{slot} |"
+      end
+
+      print "   #{sideboard.grid[i]}"
+      i += 1
+     
+      puts
+      puts '--------------------'
+      puts
     end
   end
 end
