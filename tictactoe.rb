@@ -5,7 +5,6 @@ class Player
 
   def initialize
     @@player_count += 1
-    @boxes_chosen = []
     name_chooser
     mark_chooser
   end
@@ -29,9 +28,14 @@ end
 
 
 class Board
-  attr_reader :current_board
+  attr_reader :current_board, :win_combos
 
   def initialize
+    @win_combos = [
+      [1, 2, 3], [4, 5, 6], [7, 8, 9],
+      [1, 4, 7], [2, 5, 8], [3, 6, 9],
+      [1, 5, 9], [3, 5, 7]
+   ]
     @current_board = {}
     create_board
   end
@@ -103,7 +107,6 @@ class TicTacToe
       if (1..9).include?(box_key)
         if board.box_empty?(box_key)
           board.update_box(box_key, playernum.mark)
-          playernum.boxes_chosen << box_key
           break
         else
           puts "Box #{box_key} is already taken. Please try again."
@@ -125,17 +128,11 @@ class TicTacToe
   end
 
   def victory?(playernum)
-    board_now = board.current_board
-    mark = playernum.mark
+    @board.win_combos.each do |win_combo|
+      matches = win_combo.select { |cell| @board.current_board[cell] == playernum.mark }
+      return true if matches.size == 3
+    end
 
-    return true if board_now[1] == mark && board_now[2] == mark && board_now[3] == mark
-    return true if board_now[4] == mark && board_now[5] == mark && board_now[6] == mark
-    return true if board_now[7] == mark && board_now[8] == mark && board_now[9] == mark
-    return true if board_now[1] == mark && board_now[4] == mark && board_now[7] == mark
-    return true if board_now[2] == mark && board_now[5] == mark && board_now[8] == mark
-    return true if board_now[3] == mark && board_now[6] == mark && board_now[9] == mark
-    return true if board_now[1] == mark && board_now[5] == mark && board_now[9] == mark
-    return true if board_now[3] == mark && board_now[5] == mark && board_now[7] == mark
     false
   end
 
